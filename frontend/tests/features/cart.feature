@@ -63,3 +63,38 @@ Feature: Shopping cart management
     Then the "Add to Cart" button is disabled
     When I set the quantity to 1
     Then the "Add to Cart" button is enabled
+
+  # Error Handling Scenarios
+
+  Scenario: Display error message when product catalog fails to load
+    Given the network connection is unavailable
+    When I navigate to the product catalog
+    Then I see an error message "Failed to fetch products"
+    And the product grid is not displayed
+
+  Scenario: Show loading spinner while fetching products
+    Given the network connection is slow
+    When I navigate to the product catalog
+    Then I see a loading spinner
+    And the product grid is not displayed until loading completes
+
+  Scenario: Retry loading products after network failure
+    Given I am viewing the product catalog
+    And the product fetch has failed
+    When I refresh the page
+    Then the system attempts to reload the products
+
+  Scenario: Handle timeout when adding to cart
+    Given I am viewing the product catalog
+    And I see a product "SmartFeeder One"
+    And I set the quantity to 2
+    When I click "Add to Cart"
+    And the network request times out
+    Then I see an error message indicating the request failed
+    And the quantity is preserved for retry
+
+  Scenario: Graceful degradation when API is unreachable
+    Given the API server is unreachable
+    When I navigate to the product catalog
+    Then I see a user-friendly error message
+    And I am offered an option to retry
